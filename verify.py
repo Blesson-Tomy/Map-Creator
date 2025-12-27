@@ -121,4 +121,4 @@ def verify_json_detailed(json_path, output_img_path):
     print(f"Verification image saved to: {output_img_path}")
 
 # Run
-verify_json_detailed('floorplan_master_fused.json', 'verification_detailed.jpg')
+verify_json_detailed('json/floorplan_master_fused.json', 'images/verification_detailed.jpg')

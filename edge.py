@@ -212,7 +212,7 @@ def main():
     
     # Hardcoded filename
     filename = "first plain.jpg"
-    target_image = str(maps_dir / filename)
+    target_image = str(maps_dir / "images" / filename)
     
     # Check if file exists
     if not Path(target_image).exists():
@@ -223,7 +223,7 @@ def main():
     
     # Run detection pipeline
     detector = WallDetector(target_image)
-    detector.process(output_path=str(maps_dir / "output_corrected_map.jpg"))
+    detector.process(output_path=str(maps_dir / "images" / "output_corrected_map.jpg"))
 
 
 if __name__ == "__main__":

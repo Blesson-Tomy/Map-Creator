@@ -191,5 +191,5 @@ def visualize_stair_polygons(segments, polygon_assignments, output_img_path):
     print(f"Visualization saved to: {output_img_path}")
 
 if __name__ == "__main__":
-    group_stair_polygons("first_floor_combined.json", "first_floor_combined_with_polygon_ids.json", visualize=True)
+    group_stair_polygons("json/first_floor_combined.json", "json/first_floor_combined_with_polygon_ids.json", visualize=True, vis_output="images/stair_polygons_visualization.jpg")
     print("\nDone!")

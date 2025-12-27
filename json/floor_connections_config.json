@@ -1,0 +1,12 @@
+{
+  "floor_connections": {
+    "1": {"from_floor": 1, "to_floor": 2},
+    "2": {"from_floor": 0, "to_floor": 0.3},
+    "3": {"from_floor": 1, "to_floor": 2},
+    "4": {"from_floor": 0, "to_floor": 0.3},
+    "5": {"from_floor": 0.6, "to_floor": 1},
+    "6": {"from_floor": 0, "to_floor": 1},
+    "7": {"from_floor": 0.3, "to_floor": 0.6},
+    "8": {"from_floor": 0.3, "to_floor": 0.6}
+  }
+}

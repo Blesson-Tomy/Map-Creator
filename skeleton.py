@@ -67,7 +67,7 @@ def get_skeleton(img_path):
     return img, closing, final_skeleton
 
 # Run the function
-original, binary, skeleton_result = get_skeleton('second plain.jpg')
+original, binary, skeleton_result = get_skeleton('images/first plain.jpg')
 
 # Visualization
 plt.figure(figsize=(15, 5))
@@ -77,5 +77,5 @@ plt.subplot(133), plt.imshow(skeleton_result, cmap='gray'), plt.title('Continuou
 plt.show()
 
 # Save
-cv2.imwrite('skeleton.png', skeleton_result)
+cv2.imwrite('images/skeleton.png', skeleton_result)
 print("Saved improved skeleton.png")

@@ -32,7 +32,10 @@ def add_floor_connections(input_file, config_file, output_file):
     floor_connections = {}
     for poly_id_str, connection in config.get('floor_connections', {}).items():
         poly_id = int(poly_id_str)
-        floor_connections[poly_id] = connection
+        # Store both floors as a bidirectional connection
+        from_floor = connection['from_floor']
+        to_floor = connection['to_floor']
+        floor_connections[poly_id] = [from_floor, to_floor]
     
     print(f"Loaded floor connections for {len(floor_connections)} polygons from config\n")
     
@@ -53,7 +56,7 @@ def add_floor_connections(input_file, config_file, output_file):
             if 'stair_polygon_id' in seg_copy:
                 poly_id = seg_copy['stair_polygon_id']
                 if poly_id in floor_connections:
-                    seg_copy['floor_connection'] = floor_connections[poly_id]
+                    seg_copy['floors_connected'] = floor_connections[poly_id]
         
         updated_segments.append(seg_copy)
     
@@ -64,13 +67,13 @@ def add_floor_connections(input_file, config_file, output_file):
     print("\n" + "="*60)
     print(f"Saved updated JSON to {output_file}")
     print(f"- Removed original_* fields from stairs")
-    print(f"- Added floor_connection data to {len(floor_connections)} polygons")
+    print(f"- Added bidirectional floors_connected data to {len(floor_connections)} polygons")
     print("="*60)
 
 if __name__ == "__main__":
-    input_file = "first_floor_combined_with_polygon_ids.json"
-    config_file = "floor_connections_config.json"
-    output_file = "first_floor_combined_with_floors.json"
+    input_file = "json/first_floor_combined_with_polygon_ids.json"
+    config_file = "json/floor_connections_config.json"
+    output_file = "json/first_floor_combined_with_floors.json"
     
     add_floor_connections(input_file, config_file, output_file)
     print("\nDone!")

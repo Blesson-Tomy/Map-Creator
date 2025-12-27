@@ -123,4 +123,4 @@ def align_walls_globally(input_path, output_path):
     print(f"Saved to: {output_path}")
 
 # Run
-align_walls_globally('second_floor_fused.json', 'second_floor_aligned.json')
+align_walls_globally('json/first_floor_fused.json', 'json/first_floor_aligned.json')
