@@ -127,8 +127,8 @@ def visualize_entrances(floor_file, entrances_file, output_image, rooms_file=Non
 
 if __name__ == '__main__':
     visualize_entrances(
-        'json/first_floor_combined_with_floors.json',
-        'json/first_floor_entrances.json',
-        'images/first_floor_entrances_final.jpg',
-        'json/first_floor_rooms.json'  # Optional: add rooms if file exists
+        'json/floor_2_with_floor_conn_data.json',
+        'json/floor_2_entrances.json',
+        'images/floor_2_entrances.jpg',
+        'json/floor_2_rooms.json'  # Optional: add rooms if file exists
     )

@@ -331,9 +331,9 @@ def snap_stairs_to_walls(walls_file, stairs_file, output_file, endpoint_search_r
     print(f"Total segments: {len(combined)} ({len(walls_with_type)} walls + {len(snapped_stairs)} stairs)")
 
 if __name__ == "__main__":
-    walls_file = "json/first_floor_aligned_fixed.json"
-    stairs_file = "json/first_floor_stairs_aligned.json"
-    output_file = "json/first_floor_combined.json"
+    walls_file = "json/floor_2_aligned.json"
+    stairs_file = "json/stairs_2_aligned.json"
+    output_file = "json/floor_2_combined.json"
     
     snap_stairs_to_walls(walls_file, stairs_file, output_file, endpoint_search_radius=20)
     

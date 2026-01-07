@@ -1,6 +1,5 @@
 import cv2
 import numpy as np
-import matplotlib.pyplot as plt
 
 def get_skeleton(img_path):
     # 1. Load image
@@ -67,14 +66,7 @@ def get_skeleton(img_path):
     return img, closing, final_skeleton
 
 # Run the function
-original, binary, skeleton_result = get_skeleton('images/first plain.jpg')
-
-# Visualization
-plt.figure(figsize=(15, 5))
-plt.subplot(131), plt.imshow(original, cmap='gray'), plt.title('Original')
-plt.subplot(132), plt.imshow(binary, cmap='gray'), plt.title('Solid Binary (No Holes)')
-plt.subplot(133), plt.imshow(skeleton_result, cmap='gray'), plt.title('Continuous Skeleton')
-plt.show()
+original, binary, skeleton_result = get_skeleton('images/floor_2.5.jpg')
 
 # Save
 cv2.imwrite('images/skeleton.png', skeleton_result)

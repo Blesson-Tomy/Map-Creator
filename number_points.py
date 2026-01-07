@@ -79,7 +79,7 @@ def number_points(input_file, output_image, output_json):
 
 if __name__ == '__main__':
     number_points(
-        'json/first_floor_combined_with_floors.json',
-        'images/first_floor_numbered_points.jpg',
-        'json/first_floor_points_mapping.json'
+        'json/floor_2_with_floor_conn_data.json',
+        'images/floor_2_numbered_points.jpg',
+        'json/floor_2_points_mapping.json'
     )

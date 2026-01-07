@@ -178,6 +178,6 @@ def fix_wall_endpoints(input_file, output_file, endpoint_snap_radius=30, line_sn
     print(f"Saved corrected walls to {output_file}")
 
 if __name__ == "__main__":
-    fix_wall_endpoints("json/first_floor_aligned.json", "json/first_floor_aligned_fixed.json", 
+    fix_wall_endpoints("json/floor_1_aligned.json", "json/floor_1_aligned_fixed.json", 
                        endpoint_snap_radius=30, line_snap_radius=15)
-    print("\nDone! Use json/first_floor_aligned_fixed.json for the next step.")
+    print("\nDone!")

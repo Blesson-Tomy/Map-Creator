@@ -71,9 +71,9 @@ def add_floor_connections(input_file, config_file, output_file):
     print("="*60)
 
 if __name__ == "__main__":
-    input_file = "json/first_floor_combined_with_polygon_ids.json"
+    input_file = "json/floor_2_combined_with_polygon_ids.json"
     config_file = "json/floor_connections_config.json"
-    output_file = "json/first_floor_combined_with_floors.json"
+    output_file = "json/floor_2_with_floor_conn_data.json"
     
     add_floor_connections(input_file, config_file, output_file)
     print("\nDone!")

@@ -207,41 +207,31 @@ if __name__ == '__main__':
     pairs = [
         # (point_id_1, point_id_2),
         # Format: (1, 2), (3, 4), etc.
-        (108,109),
-        (30,29),
-        (14,105),
-        (105,13),
-        (28,27),
+        (99,98),
+        (32,31),
+        (17,18),
+        (15,16),
+        (30,89),
+        (89,29),
+        (14,85),
+        (85,13),
         (11,12),
-        (26,35),
-        (9,10),
-        (33,34),
-        (19,120,1),
-        (18,96,1),
-        (116,115,1),
-        (131,113,1),
-        (111,127,1),
-        (130,126,1),
-        (129,128,1),
-        (85,119,1),
-        (118,25,1),
-        (123,112,1),
-        (110,121,1),
-        (117,114,1),
-        (88,48),
-        (83,122,1),
-        (44,43,1),
-        (77,78),
-        (79,55),
-        (89,50),
-        (56,90),
-        (55,80),
-        (60,86),
-        (81,63),
-        (63,74),
-        (113,111),
-        (45,32,1),
-        (124,125,1)
+        (27,28),
+        (100,23,1),
+        (23,26),
+        (10,22,1),
+        (73,35,1),
+        (74,101,1),
+        (75,76),
+        (66,67),
+        (68,41),
+        (41,69),
+        (77,42),
+        (42,78),
+        (70,53),
+        (53,71),
+        (79,80),
+        (74,38)
     ]
     
     # Individual points: extend line from these points and find wall intersection
@@ -256,15 +246,15 @@ if __name__ == '__main__':
     
     # Process pairs
     if pairs:
-        pair_entrances, next_id = create_entrances_from_pairs('json/first_floor_points_mapping.json', pairs)
+        pair_entrances, next_id = create_entrances_from_pairs('json/floor_2_points_mapping.json', pairs)
         all_entrances.extend(pair_entrances)
         entrance_id = next_id
     
     # Process individual points
     if individual_points:
         point_entrances, next_id = create_entrances_from_points(
-            'json/first_floor_combined_with_floors.json',
-            'json/first_floor_points_mapping.json',
+            'json/floor_2_with_floor_conn_data.json',
+            'json/floor_2_points_mapping.json',
             individual_points
         )
         # Update IDs to continue from pairs
@@ -274,6 +264,6 @@ if __name__ == '__main__':
     
     # Save all entrances
     if all_entrances:
-        save_entrances(all_entrances, 'json/first_floor_entrances.json')
+        save_entrances(all_entrances, 'json/floor_2_entrances.json')
     else:
         print("No entrances to save. Add pairs or individual_points to the lists.")

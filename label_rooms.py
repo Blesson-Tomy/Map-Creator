@@ -36,23 +36,23 @@ def label_rooms(points_mapping_file, output_file=None):
     rooms = {
         # Format 1 (without name): room_id: [point_id_1, point_id_2, point_id_3, point_id_4]
         # Format 2 (with name): room_id: {"point_ids": [...], "name": "Room Name"}
-        1: {"point_ids": [1, 15, 104, 105], "name": "114: Gents Toilet"},
-        2: {"point_ids": [16, 17, 109, 23], "name": "Lift"},
-        3: {"point_ids": [104, 101, 102, 105], "name": None},
-        4: {"point_ids": [31, 47, 29, 103], "name": "113: Gents Waiting Room"},
-        5: {"point_ids": [101, 102, 95, 96], "name": "115: Software Computing Lab"},
-        6: {"point_ids": [29, 103, 27, 100], "name": "112: Staff Room"},
-        7: {"point_ids": [34, 26, 98, 46], "name": "111: HOD Office"},
-        8: {"point_ids": [48, 49, 50, 53], "name": "110: HOD Office"},
-        9: {"point_ids": [42, 43, 54, 55], "name": "105: Lecture Hall"},
-        10: {"point_ids": [56, 59, 60, 61], "name": "109: Staff Room"},
-        11: {"point_ids": [54, 55, 63, 62], "name": "106: Lecture Hall"},
-        12: {"point_ids": [61, 60, 87, 67], "name": "108: Ladies Waiting Room"},
-        13: {"point_ids": [62, 63, 66, 75], "name": "107: Ladies Toilet"},
+        1: {"point_ids": [20, 21, 25, 24], "name": "Lift"},
+        2: {"point_ids": [1, 19, 17, 94], "name": "210: Staff Room"},
+        3: {"point_ids": [33, 37, 89, 90], "name": "209: Programming Lab"},
+        4: {"point_ids": [94, 17, 15, 91], "name": "211: Staff Room"},
+        5: {"point_ids": [84, 86, 88, 85], "name": "212: IEDC"},
+        6: {"point_ids": [0, 10, 84, 85], "name": "213: Lecture Hall"},
+        7: {"point_ids": [28, 36, 89, 90], "name": "208: Lecture Hall"},
+        8: {"point_ids": [34, 35, 41, 40], "name": "202: Lecture Hall"},
+        9: {"point_ids": [40, 44, 41, 47], "name": "203: Staff Room"},
+        10: {"point_ids": [48, 52, 51, 53], "name": "204: HOD Office"},
+        11: {"point_ids": [52, 58, 72, 53], "name": "205: Staff Room"},
+        12: {"point_ids": [42, 81, 43, 59], "name": "206: Lecture Hall"},
+        13: {"point_ids": [42, 43, 82, 76], "name": "207: Lecture Hall"},
     }
     
     if output_file is None:
-        output_file = 'json/first_floor_rooms.json'
+        output_file = 'json/floor_2_rooms.json'
     
     # Load points mapping
     points_mapping = load_json(points_mapping_file)
@@ -110,4 +110,4 @@ def label_rooms(points_mapping_file, output_file=None):
     print(f"\nSaved {len(rooms_data['rooms'])} rooms to {output_file}")
 
 if __name__ == '__main__':
-    label_rooms('json/first_floor_points_mapping.json')
+    label_rooms('json/floor_2_points_mapping.json')

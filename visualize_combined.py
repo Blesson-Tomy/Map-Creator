@@ -102,4 +102,4 @@ def visualize_combined_floor_plan(json_path, output_img_path):
     print(f"Image size: {w}x{h} pixels")
 
 # Run
-visualize_combined_floor_plan('json/first_floor_combined.json', 'images/floor_plan_combined_visualization.jpg')
+visualize_combined_floor_plan('json/floor_2_combined.json', 'images/floor_plan_combined_visualization.jpg')
