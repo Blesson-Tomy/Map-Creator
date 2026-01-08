@@ -329,54 +329,16 @@ if st.session_state.current_view == 'walls' and 'run_walls_button' in locals() a
             st.session_state.walls_processed = True
             st.session_state.walls_output_path = output_path
             
-            # Save JSON output
-            import json
-            os.makedirs("json", exist_ok=True)
-            json_output_path = f"json/floor_{st.session_state.current_floor}_walls.json"
-            with open(json_output_path, "w") as f:
-                json.dump(extended_data, f, indent=2)
-            
-            # Display output files section
-            st.divider()
-            st.subheader("📁 Output Files")
-            
-            col1, col2 = st.columns(2)
-            
-            # Image output
-            with col1:
-                st.write("**Image (PNG)**")
-                col_a, col_b = st.columns([3, 1])
-                with col_a:
-                    st.code(os.path.abspath(output_path), language="text")
-                with col_b:
-                    if st.button("📋 Copy", key="copy_walls_img"):
-                        st.toast("Path copied!")
-            
-            # JSON output
-            with col2:
-                st.write("**Data (JSON)**")
-                col_a, col_b = st.columns([3, 1])
-                with col_a:
-                    st.code(os.path.abspath(json_output_path), language="text")
-                with col_b:
-                    if st.button("📋 Copy", key="copy_walls_json"):
-                        st.toast("Path copied!")
-            
-            # Display image and JSON preview
-            st.divider()
-            st.subheader("📊 Verification Image")
+            # Display and open in browser
             st.image(verification_img, channels="BGR", caption="Walls with Extended Endpoints")
-            
-            st.divider()
-            st.subheader("📋 JSON Preview")
-            with st.expander("Show first 10 lines of JSON data"):
-                lines = json.dumps(extended_data[:min(3, len(extended_data))], indent=2).split('\n')
-                st.code('\n'.join(lines[:15]) + "...", language="json")
             
             file_url = os.path.abspath(output_path)
             webbrowser.open(f"file:///{file_url}")
-            st.success("✅ Walls processed successfully!")
-            st.info("📌 Both image and JSON files have been saved. Click the Stairs button in the timeline above to continue.")
+            st.info(f"Walls image opened in browser: {output_path}")
+            
+            # Move to stairs step
+            st.session_state.current_view = 'stairs'
+            st.rerun()
             
         except Exception as e:
             st.error(f"Error: {str(e)}")
@@ -446,53 +408,16 @@ if st.session_state.current_view == 'stairs' and st.session_state.walls_processe
             st.session_state.stairs_processed = True
             st.session_state.stairs_output_path = output_path
             
-            # Save JSON output
-            os.makedirs("json", exist_ok=True)
-            json_output_path = f"json/floor_{st.session_state.current_floor}_stairs.json"
-            with open(json_output_path, "w") as f:
-                json.dump(extended_data, f, indent=2)
-            
-            # Display output files section
-            st.divider()
-            st.subheader("📁 Output Files")
-            
-            col1, col2 = st.columns(2)
-            
-            # Image output
-            with col1:
-                st.write("**Image (PNG)**")
-                col_a, col_b = st.columns([3, 1])
-                with col_a:
-                    st.code(os.path.abspath(output_path), language="text")
-                with col_b:
-                    if st.button("📋 Copy", key="copy_stairs_img"):
-                        st.toast("Path copied!")
-            
-            # JSON output
-            with col2:
-                st.write("**Data (JSON)**")
-                col_a, col_b = st.columns([3, 1])
-                with col_a:
-                    st.code(os.path.abspath(json_output_path), language="text")
-                with col_b:
-                    if st.button("📋 Copy", key="copy_stairs_json"):
-                        st.toast("Path copied!")
-            
-            # Display image and JSON preview
-            st.divider()
-            st.subheader("📊 Verification Image")
+            # Display and open in browser
             st.image(verification_img, channels="BGR", caption="Stairs with Extended Endpoints")
-            
-            st.divider()
-            st.subheader("📋 JSON Preview")
-            with st.expander("Show first 10 lines of JSON data"):
-                lines = json.dumps(extended_data[:min(3, len(extended_data))], indent=2).split('\n')
-                st.code('\n'.join(lines[:15]) + "...", language="json")
             
             file_url = os.path.abspath(output_path)
             webbrowser.open(f"file:///{file_url}")
-            st.success("✅ Stairs processed successfully!")
-            st.info("📌 Both image and JSON files have been saved. Click the Snap button in the timeline above to continue.")
+            st.info(f"Stairs image opened in browser: {output_path}")
+            
+            # Move to snap step
+            st.session_state.current_view = 'snap'
+            st.rerun()
             
         except Exception as e:
             st.error(f"Error: {str(e)}")
@@ -532,56 +457,14 @@ if st.session_state.current_view == 'snap' and 'snap_button' in locals() and sna
         
         st.session_state.snapped = True
         
-        # Save ONLY the snapped stairs JSON (walls don't change during snapping)
-        os.makedirs("json", exist_ok=True)
-        stairs_json_path = f"json/floor_{st.session_state.current_floor}_stairs_snapped.json"
-        
-        with open(stairs_json_path, "w") as f:
-            json.dump(snapped_stairs, f, indent=2)
-        
-        # Display output files section
-        st.divider()
-        st.subheader("📁 Output Files")
-        
-        col1, col2 = st.columns(2)
-        
-        # Image output
-        with col1:
-            st.write("**Image (PNG)**")
-            col_a, col_b = st.columns([3, 1])
-            with col_a:
-                st.code(os.path.abspath(output_path), language="text")
-            with col_b:
-                if st.button("📋 Copy", key="copy_snap_img"):
-                    st.toast("Path copied!")
-        
-        # JSON output (only stairs, walls are unchanged)
-        with col2:
-            st.write("**Data (JSON)**")
-            st.caption("Snapped Stairs Only")
-            col_a, col_b = st.columns([3, 1])
-            with col_a:
-                st.code(os.path.abspath(stairs_json_path), language="text")
-            with col_b:
-                if st.button("📋 Copy", key="copy_snap_stairs_json"):
-                    st.toast("Path copied!")
-        
-        # Display image and JSON preview
-        st.divider()
-        st.subheader("📊 Verification Image")
+        # Display the combined verification image
         st.image(verification_img, channels="BGR", caption="Final Verification: Walls (Green) + Snapped Stairs (Magenta)")
-        
-        st.divider()
-        st.subheader("📋 JSON Preview")
-        with st.expander("Show snapped stairs data (first 3 segments)"):
-            lines = json.dumps(snapped_stairs[:min(3, len(snapped_stairs))], indent=2).split('\n')
-            st.code('\n'.join(lines[:20]) + "...", language="json")
         
         # Open in browser
         file_url = os.path.abspath(output_path)
         webbrowser.open(f"file:///{file_url}")
-        st.success("✅ Snapping completed successfully!")
-        st.info("📌 Snapped stairs JSON has been saved. Walls JSON remains unchanged from walls processing step.")
+        st.info(f"Snapped stairs image opened in browser: {output_path}")
+        st.rerun()
         
     except Exception as e:
         st.error(f"Error: {str(e)}")
