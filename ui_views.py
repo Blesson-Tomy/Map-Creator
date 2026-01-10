@@ -21,6 +21,7 @@ def render_timeline():
         ("Stairs", "stairs"),
         ("Snap", "snap"),
         ("Floor Conn", "floor_connections"),
+        ("Entrances", "entrances"),
         ("Visualize", "visualize"),
     ]
     
@@ -408,6 +409,113 @@ def render_floor_connections_view():
     return walls_json_path, stairs_json_path, plot_button, polygon_id, from_floor, to_floor, add_conn_button, save_button
 
 
+def render_entrances_view():
+    """Render the entrances creation view."""
+    st.header("Create Entrances")
+    
+    floor_number = st.text_input(
+        "Enter floor number",
+        value=st.session_state.get("current_floor", ""),
+        on_change=lambda: st.session_state.update({"current_floor": st.session_state.ent_floor_input}),
+        key="ent_floor_input"
+    )
+    
+    st.subheader("Select Data Files")
+    
+    # Option to use automatic detection or custom files
+    use_automatic = st.checkbox(
+        "Use automatic floor detection",
+        value=True,
+        key="ent_use_automatic"
+    )
+    
+    walls_json_path = None
+    stairs_json_path = None
+    
+    if use_automatic and floor_number:
+        try:
+            floor = float(floor_number)
+            walls_json_path = f"outputs/floor_{floor}_walls.json"
+            stairs_json_path = f"outputs/floor_{floor}_stairs.json"
+        except ValueError:
+            st.error("Invalid floor number")
+    else:
+        # Custom file selection
+        st.write("Select walls JSON:")
+        walls_file = st.selectbox(
+            "Walls JSON",
+            options=_get_json_files("outputs", "walls"),
+            key="ent_walls_select"
+        )
+        if walls_file:
+            walls_json_path = f"outputs/{walls_file}"
+        
+        st.write("Select stairs JSON (optional):")
+        stairs_file = st.selectbox(
+            "Stairs JSON",
+            options=["-None-"] + _get_json_files("outputs", "stairs"),
+            key="ent_stairs_select"
+        )
+        if stairs_file and stairs_file != "-None-":
+            stairs_json_path = f"outputs/{stairs_file}"
+    
+    plot_button = st.button("Plot Points", width='stretch', type="secondary", key="ent_plot_btn")
+    
+    st.divider()
+    st.subheader("Add Entrance Pairs")
+    
+    # Initialize pending entrances list in session state
+    if 'ent_pending' not in st.session_state:
+        st.session_state.ent_pending = []
+    
+    col1, col2 = st.columns(2)
+    with col1:
+        point1_id = st.number_input(
+            "Point 1 ID",
+            min_value=0,
+            step=1,
+            key="ent_point1_id"
+        )
+    
+    with col2:
+        point2_id = st.number_input(
+            "Point 2 ID",
+            min_value=0,
+            step=1,
+            key="ent_point2_id"
+        )
+    
+    st.write("Optional Entrance Details")
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        ent_name = st.text_input("Name", key="ent_name")
+    
+    with col2:
+        room_no = st.text_input("Room No.", key="ent_room_no")
+    
+    with col3:
+        is_stairs = st.checkbox("Stairs", key="ent_is_stairs")
+    
+    add_entrance_button = st.button("Add Entrance Pair", width='stretch', type="secondary", key="add_ent_btn")
+    
+    # Display pending entrances
+    if st.session_state.ent_pending:
+        st.subheader("Pending Entrances")
+        st.write(f"Total: {len(st.session_state.ent_pending)} pairs")
+        
+        for idx, ent in enumerate(st.session_state.ent_pending):
+            col1, col2 = st.columns([4, 1])
+            with col1:
+                stairs_badge = " 🪜" if ent.get('stairs') else ""
+                st.write(f"P{ent['point1_id']}-P{ent['point2_id']}: {ent.get('name', '(no name)')} | Room: {ent.get('room_no', 'N/A')}{stairs_badge}")
+            with col2:
+                if st.button("Remove", key=f"remove_ent_{idx}", width='content'):
+                    st.session_state.ent_pending.pop(idx)
+                    st.rerun()
+    
+    save_button = st.button("Save All Entrances", width='stretch', type="primary", key="save_ent_btn")
+    
+    return walls_json_path, stairs_json_path, plot_button, point1_id, point2_id, ent_name, room_no, is_stairs, add_entrance_button, save_button
 def _get_json_files(directory, filter_type=None):
     """Get list of JSON files in directory with optional filtering."""
     if not os.path.exists(directory):
@@ -428,6 +536,13 @@ def render_visualize_view():
     
     st.subheader("Upload JSON Files to Visualize")
     
+    uploaded_files = st.file_uploader(
+        "Select one or more JSON files",
+        type=["json"],
+        accept_multiple_files=True
+    )
+    
+    visualize_button = st.button("Visualize", key="visualize_button")
     
     return uploaded_files, visualize_button
 

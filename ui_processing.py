@@ -380,15 +380,24 @@ def process_visualize(uploaded_files):
         all_y = []
         
         for data in all_data:
-            for item in data:
-                if isinstance(item, dict):
-                    if 'x1' in item and 'y1' in item:
-                        all_x.append(item['x1'])
-                        all_y.append(item['y1'])
-                        if 'x2' in item:
-                            all_x.append(item['x2'])
-                        if 'y2' in item:
-                            all_y.append(item['y2'])
+            # Handle both segment data (x1, y1, x2, y2) and entrance data (x, y)
+            if isinstance(data, dict) and 'entrances' in data:
+                # This is an entrances JSON with 'entrances' array
+                for item in data.get('entrances', []):
+                    if isinstance(item, dict) and 'x' in item and 'y' in item:
+                        all_x.append(item['x'])
+                        all_y.append(item['y'])
+            else:
+                # This is segment data (walls, stairs)
+                for item in data:
+                    if isinstance(item, dict):
+                        if 'x1' in item and 'y1' in item:
+                            all_x.append(item['x1'])
+                            all_y.append(item['y1'])
+                            if 'x2' in item:
+                                all_x.append(item['x2'])
+                            if 'y2' in item:
+                                all_y.append(item['y2'])
         
         if not all_x or not all_y:
             st.error("No coordinate data found in files")
@@ -402,22 +411,36 @@ def process_visualize(uploaded_files):
         for file_idx, data in enumerate(all_data):
             color = colors[file_idx % len(colors)]
             
-            for item in data:
-                if isinstance(item, dict) and 'x1' in item and 'y1' in item:
-                    x1, y1 = int(item['x1']), int(item['y1'])
-                    x2 = int(item.get('x2', x1))
-                    y2 = int(item.get('y2', y1))
-                    
-                    cv2.line(img, (x1, y1), (x2, y2), color, 2)
+            # Check if this is entrances data or segment data
+            if isinstance(data, dict) and 'entrances' in data:
+                # Draw entrances as points
+                for item in data.get('entrances', []):
+                    if isinstance(item, dict) and 'x' in item and 'y' in item:
+                        x, y = int(item['x']), int(item['y'])
+                        cv2.circle(img, (x, y), 6, color, -1)  # Filled circle for entrance
+            else:
+                # Draw segments (walls, stairs)
+                for item in data:
+                    if isinstance(item, dict) and 'x1' in item and 'y1' in item:
+                        x1, y1 = int(item['x1']), int(item['y1'])
+                        x2 = int(item.get('x2', x1))
+                        y2 = int(item.get('y2', y1))
+                        
+                        cv2.line(img, (x1, y1), (x2, y2), color, 2)
         
         # Collect all unique vertices
         unique_points = set()
         for data in all_data:
-            for item in data:
-                if isinstance(item, dict) and 'x1' in item and 'y1' in item:
-                    unique_points.add((int(item['x1']), int(item['y1'])))
-                    if 'x2' in item and 'y2' in item:
-                        unique_points.add((int(item['x2']), int(item['y2'])))
+            if isinstance(data, dict) and 'entrances' in data:
+                # Skip entrance points from vertex collection (they're already drawn as filled circles)
+                pass
+            else:
+                # Collect segment endpoints
+                for item in data:
+                    if isinstance(item, dict) and 'x1' in item and 'y1' in item:
+                        unique_points.add((int(item['x1']), int(item['y1'])))
+                        if 'x2' in item and 'y2' in item:
+                            unique_points.add((int(item['x2']), int(item['y2'])))
         
         # Draw vertices
         font = cv2.FONT_HERSHEY_SIMPLEX
@@ -553,7 +576,9 @@ def process_floor_connections(walls_json_path, stairs_json_path):
         height=600,
         showlegend=False,
         xaxis=dict(scaleanchor="y", scaleratio=1),
-        yaxis=dict(scaleanchor="x", scaleratio=1)
+        yaxis=dict(scaleanchor="x", scaleratio=1),
+        plot_bgcolor='white',
+        paper_bgcolor='white'
     )
     
     st.plotly_chart(fig, width='stretch')
@@ -627,3 +652,214 @@ def save_floor_connection(stairs_json_path, connections_list):
         st.error(traceback.format_exc())
         return False
 
+
+def process_entrances_plot(walls_json_path, stairs_json_path=None):
+    """
+    Plot walls and extract unique points from coordinates.
+    Points are extracted from segment endpoints and given sequential IDs.
+    
+    Args:
+        walls_json_path: Path to walls JSON file
+        stairs_json_path: Optional path to stairs JSON file
+    
+    Returns:
+        Tuple of (walls_data, points_dict) where points_dict is {point_id: (x, y)}
+    """
+    import plotly.graph_objects as go
+    
+    if not walls_json_path:
+        st.error("Please select walls JSON file")
+        return None, None
+    
+    if not os.path.exists(walls_json_path):
+        st.error(f"Walls file not found: {walls_json_path}")
+        return None, None
+    
+    # Load walls
+    with open(walls_json_path, 'r') as f:
+        walls_data = json.load(f)
+    
+    # Load stairs if provided
+    stairs_data = []
+    if stairs_json_path and os.path.exists(stairs_json_path):
+        with open(stairs_json_path, 'r') as f:
+            stairs_data = json.load(f)
+    
+    # Extract unique points from both walls and stairs
+    unique_points = {}  # {(x, y): point_id}
+    point_id_counter = 0
+    
+    all_segments = walls_data + stairs_data
+    
+    for seg in all_segments:
+        if isinstance(seg, dict) and 'x1' in seg and 'y1' in seg:
+            # Extract x1, y1
+            p1 = (seg['x1'], seg['y1'])
+            if p1 not in unique_points:
+                unique_points[p1] = point_id_counter
+                point_id_counter += 1
+            
+            # Extract x2, y2
+            if 'x2' in seg and 'y2' in seg:
+                p2 = (seg['x2'], seg['y2'])
+                if p2 not in unique_points:
+                    unique_points[p2] = point_id_counter
+                    point_id_counter += 1
+    
+    # Create reverse mapping for display
+    points_dict = {v: k for k, v in unique_points.items()}
+    
+    # Create Plotly figure
+    fig = go.Figure()
+    
+    # Add walls (blue lines)
+    for item in walls_data:
+        if isinstance(item, dict) and 'x1' in item and 'y1' in item:
+            x1, y1 = item['x1'], item['y1']
+            x2 = item.get('x2', x1)
+            y2 = item.get('y2', y1)
+            fig.add_trace(go.Scatter(
+                x=[x1, x2],
+                y=[y1, y2],
+                mode='lines',
+                line=dict(color='blue', width=2),
+                hoverinfo='skip',
+                showlegend=False
+            ))
+    
+    # Add stairs if available (red lines)
+    if stairs_data:
+        for item in stairs_data:
+            if isinstance(item, dict) and 'x1' in item and 'y1' in item:
+                x1, y1 = item['x1'], item['y1']
+                x2 = item.get('x2', x1)
+                y2 = item.get('y2', y1)
+                fig.add_trace(go.Scatter(
+                    x=[x1, x2],
+                    y=[y1, y2],
+                    mode='lines',
+                    line=dict(color='red', width=2),
+                    hoverinfo='skip',
+                    showlegend=False
+                ))
+    
+    # Add points (red dots with IDs)
+    point_xs = []
+    point_ys = []
+    point_ids = []
+    point_coords = []
+    
+    for pid in sorted(points_dict.keys()):
+        x, y = points_dict[pid]
+        point_xs.append(x)
+        point_ys.append(y)
+        point_ids.append(f"P{pid}")
+        point_coords.append(f"({int(x)}, {int(y)})")
+    
+    fig.add_trace(go.Scatter(
+        x=point_xs,
+        y=point_ys,
+        mode='markers+text',
+        marker=dict(size=10, color='darkred'),
+        text=point_ids,
+        textposition='top center',
+        textfont=dict(size=11, color='darkred', family='monospace'),
+        hovertext=point_coords,
+        hoverinfo='text',
+        showlegend=False
+    ))
+    
+    # Update layout with equal aspect ratio and white background
+    fig.update_layout(
+        title=f"Walls and Extracted Points ({len(points_dict)} unique points)",
+        xaxis_title="X",
+        yaxis_title="Y",
+        hovermode='closest',
+        height=700,
+        showlegend=False,
+        xaxis=dict(scaleanchor="y", scaleratio=1),
+        yaxis=dict(scaleanchor="x", scaleratio=1),
+        plot_bgcolor='white',
+        paper_bgcolor='white'
+    )
+    
+    st.plotly_chart(fig, width='stretch')
+    
+    st.info(f"📍 Total unique points extracted: {len(points_dict)}")
+    
+    return walls_data, points_dict
+
+
+def save_entrances(floor_number, entrances_list, points_dict):
+    """
+    Save entrances to JSON file.
+    
+    Args:
+        floor_number: Floor number for the output file
+        entrances_list: List of entrance dictionaries
+        points_dict: Dictionary mapping point_id to (x, y) coordinates
+    
+    Returns:
+        Boolean indicating success
+    """
+    try:
+        from pipeline_entrances import save_entrances_json, create_entrance_from_pair
+        
+        if not entrances_list:
+            st.error("No entrances to save")
+            return False
+        
+        if not points_dict:
+            st.error("No points data available")
+            return False
+        
+        try:
+            floor = float(floor_number)
+        except (ValueError, TypeError):
+            st.error("Invalid floor number")
+            return False
+        
+        # Format floor number for filename: use int if it's a whole number, else use float
+        if floor == int(floor):
+            floor_str = str(int(floor))
+        else:
+            floor_str = str(floor)
+        
+        # Create entrance objects with IDs
+        entrances = []
+        for idx, ent in enumerate(entrances_list, 1):
+            entrance = create_entrance_from_pair(
+                ent['point1_id'],
+                ent['point2_id'],
+                points_dict,
+                name=ent.get('name') or None,
+                room_no=ent.get('room_no') or None,
+                stairs=ent.get('stairs', False),
+                entrance_id=idx
+            )
+            if entrance:
+                entrances.append(entrance)
+        
+        if not entrances:
+            st.error("Failed to create any entrances")
+            return False
+        
+        # Save to file
+        output_file = f"outputs/floor_{floor_str}_entrances.json"
+        save_entrances_json(entrances, output_file)
+        
+        st.success(f"✅ Saved {len(entrances)} entrances to {output_file}")
+        
+        with st.expander("📊 Save Summary", expanded=True):
+            st.write(f"**Total entrances created:** {len(entrances)}")
+            for ent in entrances:
+                stairs_badge = " 🪜" if ent.get('stairs') else ""
+                st.write(f"  • Entry {ent['id']}: {ent.get('name', '(no name)')} | Room: {ent.get('room_no', 'N/A')} | ({ent['x']}, {ent['y']}){stairs_badge}")
+        
+        return True
+        
+    except Exception as e:
+        st.error(f"Error saving entrances: {str(e)}")
+        import traceback
+        st.error(traceback.format_exc())
+        return False

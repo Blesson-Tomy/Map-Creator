@@ -9,6 +9,7 @@ from ui_views import (
     render_stairs_view,
     render_snap_view,
     render_floor_connections_view,
+    render_entrances_view,
     render_visualize_view
 )
 from ui_processing import (
@@ -17,6 +18,8 @@ from ui_processing import (
     process_snap,
     process_floor_connections,
     save_floor_connection,
+    process_entrances_plot,
+    save_entrances,
     process_visualize
 )
 
@@ -61,6 +64,14 @@ if 'floor_conn_plot_shown' not in st.session_state:
     st.session_state.floor_conn_plot_shown = False
 if 'floor_conn_last_paths' not in st.session_state:
     st.session_state.floor_conn_last_paths = (None, None)
+if 'ent_pending' not in st.session_state:
+    st.session_state.ent_pending = []
+if 'ent_plot_shown' not in st.session_state:
+    st.session_state.ent_plot_shown = False
+if 'ent_last_paths' not in st.session_state:
+    st.session_state.ent_last_paths = (None, None)
+if 'ent_points_dict' not in st.session_state:
+    st.session_state.ent_points_dict = None
 
 st.title("Floor Plan Vectorizer")
 
@@ -71,6 +82,10 @@ render_timeline()
 if st.session_state.current_view != 'floor_connections':
     st.session_state.floor_conn_auto_shown = False
     st.session_state.floor_conn_plot_shown = False
+
+# Reset entrances plot when leaving entrances view
+if st.session_state.current_view != 'entrances':
+    st.session_state.ent_plot_shown = False
 
 # Clear any stale session state
 if 'verification_img' in st.session_state:
@@ -163,9 +178,53 @@ elif st.session_state.current_view == 'floor_connections':
         else:
             st.error("Please select a stairs JSON file first")
 
+# Entrances View
+elif st.session_state.current_view == 'entrances':
+    walls_json_path, stairs_json_path, plot_button, point1_id, point2_id, ent_name, room_no, is_stairs, add_entrance_button, save_button = render_entrances_view()
+    
+    # Store points_dict in session state when plot is generated
+    if 'ent_points_dict' not in st.session_state:
+        st.session_state.ent_points_dict = None
+    
+    # Check if plot button was clicked or if we should persist the previous plot
+    if plot_button:
+        st.session_state.ent_plot_shown = True
+        st.session_state.ent_last_paths = (walls_json_path, stairs_json_path)
+    
+    # Show plot if it was previously shown and paths are still valid
+    if st.session_state.ent_plot_shown:
+        last_walls, last_stairs = st.session_state.ent_last_paths
+        if last_walls and os.path.exists(last_walls):
+            walls_data, points_dict = process_entrances_plot(last_walls, last_stairs)
+            if walls_data and points_dict:
+                st.session_state.ent_points_dict = points_dict
+    
+    # Handle add entrance button
+    if add_entrance_button:
+        new_entrance = {
+            'point1_id': int(point1_id),
+            'point2_id': int(point2_id),
+            'name': ent_name,
+            'room_no': room_no,
+            'stairs': is_stairs
+        }
+        st.session_state.ent_pending.append(new_entrance)
+        st.rerun()
+    
+    # Handle save button - save all pending entrances
+    if save_button and st.session_state.ent_pending:
+        floor_number = st.session_state.get("current_floor")
+        points_dict = st.session_state.ent_points_dict
+        if floor_number and points_dict:
+            if save_entrances(floor_number, st.session_state.ent_pending, points_dict):
+                st.info("✨ Ready to add more entrances or navigate to another step")
+                st.session_state.ent_pending = []
+        else:
+            st.error("Please enter a floor number and plot the map first")
+
 # Visualize View
 elif st.session_state.current_view == 'visualize':
-        uploaded_files, visualize_button = render_visualize_view()
-        
-        if visualize_button and uploaded_files:
-            process_visualize(uploaded_files)
+    uploaded_files, visualize_button = render_visualize_view()
+    
+    if visualize_button and uploaded_files:
+        process_visualize(uploaded_files)
