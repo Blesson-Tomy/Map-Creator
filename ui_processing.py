@@ -863,3 +863,207 @@ def save_entrances(floor_number, entrances_list, points_dict):
         import traceback
         st.error(traceback.format_exc())
         return False
+
+
+def process_rooms_plot(walls_json_path):
+    """
+    Generate a visualization of walls with extracted points for room definition.
+    
+    Args:
+        walls_json_path: Path to walls JSON file
+    
+    Returns:
+        Tuple: (walls_data, points_dict) where points_dict = {point_id: (x, y)}
+    """
+    try:
+        import plotly.graph_objects as go
+        
+        # Load walls JSON
+        with open(walls_json_path, 'r') as f:
+            walls_data = json.load(f)
+        
+        if not walls_data:
+            st.error("No walls data found")
+            return None, None
+        
+        # Extract unique points from segments
+        points_dict = {}
+        point_counter = 0
+        
+        for segment in walls_data:
+            if isinstance(segment, dict) and 'x1' in segment and 'y1' in segment:
+                p1 = (int(segment['x1']), int(segment['y1']))
+                p2 = (int(segment['x2']) if 'x2' in segment else int(segment['x1']),
+                      int(segment['y2']) if 'y2' in segment else int(segment['y1']))
+                
+                # Add first point if not already present
+                if p1 not in points_dict.values():
+                    points_dict[f"P{point_counter}"] = p1
+                    point_counter += 1
+                
+                # Add second point if different
+                if p2 not in points_dict.values():
+                    points_dict[f"P{point_counter}"] = p2
+                    point_counter += 1
+        
+        st.info(f"Extracted {len(points_dict)} unique points")
+        
+        # Create Plotly figure
+        fig = go.Figure()
+        
+        # Add walls
+        for segment in walls_data:
+            if isinstance(segment, dict) and 'x1' in segment and 'y1' in segment:
+                x1, y1 = segment['x1'], segment['y1']
+                x2 = segment.get('x2', x1)
+                y2 = segment.get('y2', y1)
+                
+                fig.add_trace(go.Scatter(
+                    x=[x1, x2],
+                    y=[y1, y2],
+                    mode='lines',
+                    line=dict(color='blue', width=2),
+                    hoverinfo='skip',
+                    showlegend=False
+                ))
+        
+        # Add points with labels
+        point_ids = list(points_dict.keys())
+        point_coords = list(points_dict.values())
+        
+        if point_coords:
+            xs = [p[0] for p in point_coords]
+            ys = [p[1] for p in point_coords]
+            
+            fig.add_trace(go.Scatter(
+                x=xs,
+                y=ys,
+                mode='markers+text',
+                marker=dict(color='darkred', size=8),
+                text=point_ids,
+                textposition='top center',
+                textfont=dict(size=10, color='darkred'),
+                hoverinfo='skip',
+                showlegend=False
+            ))
+        
+        # Update layout
+        fig.update_layout(
+            title="Room Definition - Select 4 Points to Form Quadrilateral",
+            xaxis_title="X",
+            yaxis_title="Y",
+            height=700,
+            hovermode='closest',
+            plot_bgcolor='white',
+            paper_bgcolor='white',
+            xaxis=dict(scaleanchor="y", scaleratio=1),
+            yaxis=dict(scaleanchor="x", scaleratio=1)
+        )
+        
+        st.plotly_chart(fig, width='stretch')
+        
+        return walls_data, points_dict
+        
+    except FileNotFoundError:
+        st.error(f"Walls file not found: {walls_json_path}")
+        return None, None
+    except json.JSONDecodeError:
+        st.error("Invalid JSON in walls file")
+        return None, None
+    except Exception as e:
+        st.error(f"Error processing rooms plot: {str(e)}")
+        import traceback
+        st.error(traceback.format_exc())
+        return None, None
+
+
+def save_rooms(floor_number, rooms_list, points_dict):
+    """
+    Save rooms data to JSON file with parsed name/number attributes.
+    
+    Args:
+        floor_number: Floor number (int or float)
+        rooms_list: List of room dicts with point IDs and names
+        points_dict: Dict mapping point_id to (x, y) coordinates
+    
+    Returns:
+        Boolean indicating success
+    """
+    try:
+        from pipeline_rooms import create_room_from_points, save_rooms_json
+        
+        if not floor_number or not rooms_list or not points_dict:
+            st.error("Missing floor number, rooms, or points")
+            return False
+        
+        # Convert points_dict format: {point_id_str: (x, y)} -> {point_id_str: (x, y)}
+        # Need to handle "P0" -> 0 mapping
+        points_numeric = {}
+        for point_id_str, coord in points_dict.items():
+            # Extract number from "P0", "P1", etc.
+            if point_id_str.startswith('P'):
+                numeric_id = point_id_str[1:]
+                points_numeric[numeric_id] = coord
+            else:
+                points_numeric[point_id_str] = coord
+        
+        # Create room objects
+        rooms = []
+        for idx, room_data in enumerate(rooms_list):
+            try:
+                p1_id = room_data['point1_id']
+                p2_id = room_data['point2_id']
+                p3_id = room_data['point3_id']
+                p4_id = room_data['point4_id']
+                room_name = room_data['name']
+                
+                room = create_room_from_points(
+                    p1_id, p2_id, p3_id, p4_id,
+                    points_numeric,
+                    room_name,
+                    room_id=idx + 1
+                )
+                if room:
+                    rooms.append(room)
+            except Exception as e:
+                st.warning(f"Failed to create room {idx + 1}: {str(e)}")
+                continue
+        
+        if not rooms:
+            st.error("Failed to create any rooms")
+            return False
+        
+        # Smart floor number formatting
+        if isinstance(floor_number, str):
+            try:
+                floor_num = float(floor_number)
+            except ValueError:
+                floor_num = floor_number
+        else:
+            floor_num = float(floor_number)
+        
+        # Format floor string
+        if isinstance(floor_num, float) and floor_num == int(floor_num):
+            floor_str = str(int(floor_num))
+        else:
+            floor_str = str(floor_num)
+        
+        # Save to file
+        output_file = f"outputs/floor_{floor_str}_rooms.json"
+        save_rooms_json(rooms, output_file)
+        
+        st.success(f"✅ Saved {len(rooms)} rooms to {output_file}")
+        
+        with st.expander("📊 Save Summary", expanded=True):
+            st.write(f"**Total rooms created:** {len(rooms)}")
+            for room in rooms:
+                room_label = f"{room['number']}: {room['name']}" if room['number'] else room['name']
+                st.write(f"  • Room {room['id']}: {room_label} | Center: ({room['x']:.1f}, {room['y']:.1f}) | Points: {room['point_ids']}")
+        
+        return True
+        
+    except Exception as e:
+        st.error(f"Error saving rooms: {str(e)}")
+        import traceback
+        st.error(traceback.format_exc())
+        return False

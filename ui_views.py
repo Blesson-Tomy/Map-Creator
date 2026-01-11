@@ -22,6 +22,7 @@ def render_timeline():
         ("Snap", "snap"),
         ("Floor Conn", "floor_connections"),
         ("Entrances", "entrances"),
+        ("Rooms", "rooms"),
         ("Visualize", "visualize"),
     ]
     
@@ -546,3 +547,103 @@ def render_visualize_view():
     
     return uploaded_files, visualize_button
 
+
+def render_rooms_view():
+    """Render the rooms creation view."""
+    st.header("Create Rooms")
+    
+    st.subheader("Load Floor Plan")
+    
+    # Auto-detect from filename
+    floor_from_file = None
+    if st.session_state.current_floor is not None:
+        st.info(f"📍 Floor: {st.session_state.current_floor}")
+        floor_from_file = st.session_state.current_floor
+    
+    # Allow custom floor input
+    with st.expander("Change floor number"):
+        custom_floor = st.text_input("Floor number", value=st.session_state.current_floor or "")
+        if custom_floor:
+            floor_from_file = custom_floor
+    
+    # Get walls JSON files
+    json_dir = "outputs"
+    json_files = _get_json_files(json_dir, filter_type="walls")
+    
+    # Auto-select walls file based on floor
+    selected_walls_file = None
+    if floor_from_file:
+        matching_files = [f for f in json_files if f"floor_{floor_from_file}_walls" in f]
+        if matching_files:
+            selected_walls_file = matching_files[0]
+    
+    # Manual file selection fallback
+    if not selected_walls_file:
+        st.subheader("Manually select walls JSON")
+        selected_walls_file = st.selectbox(
+            "Select walls JSON file",
+            json_files,
+            key="rooms_walls_select"
+        )
+    else:
+        st.success(f"✓ Using: {selected_walls_file}")
+        if st.checkbox("Change walls file", key="rooms_change_walls"):
+            selected_walls_file = st.selectbox(
+                "Select walls JSON file",
+                json_files,
+                key="rooms_walls_select_manual"
+            )
+    
+    walls_json_path = f"{json_dir}/{selected_walls_file}" if selected_walls_file else None
+    
+    # Plot button
+    plot_button = st.button("Plot Walls", key="rooms_plot_button")
+    
+    st.markdown("---")
+    st.subheader("Define Rooms")
+    
+    # 4-point selection
+    st.write("Select 4 points to form a quadrilateral room:")
+    
+    col1, col2, col3, col4 = st.columns(4)
+    with col1:
+        point1_id = st.text_input("Point 1 ID", placeholder="e.g., 0", key="rooms_p1")
+    with col2:
+        point2_id = st.text_input("Point 2 ID", placeholder="e.g., 1", key="rooms_p2")
+    with col3:
+        point3_id = st.text_input("Point 3 ID", placeholder="e.g., 2", key="rooms_p3")
+    with col4:
+        point4_id = st.text_input("Point 4 ID", placeholder="e.g., 3", key="rooms_p4")
+    
+    # Room name and number
+    room_full_name = st.text_input(
+        "Room name (e.g., '114: Gents Toilet' or just 'Lift')",
+        placeholder="Format: number: name (optional)",
+        key="rooms_name"
+    )
+    
+    add_room_button = st.button("Add Room", key="rooms_add_button")
+    
+    st.markdown("---")
+    st.subheader("Pending Rooms")
+    
+    # Display pending rooms
+    if st.session_state.rooms_pending:
+        st.info(f"Total rooms to add: {len(st.session_state.rooms_pending)}")
+        
+        for idx, room in enumerate(st.session_state.rooms_pending):
+            col1, col2, col3 = st.columns([2, 2, 1])
+            with col1:
+                st.write(f"**{room.get('name', 'Unnamed')}**")
+            with col2:
+                point_ids = [room['point1_id'], room['point2_id'], room['point3_id'], room['point4_id']]
+                st.write(f"Points: {point_ids}")
+            with col3:
+                if st.button("✕", key=f"rooms_remove_{idx}"):
+                    st.session_state.rooms_pending.pop(idx)
+                    st.rerun()
+    
+    # Save button
+    save_button = st.button("Save Rooms to JSON", key="rooms_save_button")
+    
+    return walls_json_path, plot_button, point1_id, point2_id, point3_id, point4_id, room_full_name, add_room_button, save_button

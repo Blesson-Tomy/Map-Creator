@@ -10,6 +10,7 @@ from ui_views import (
     render_snap_view,
     render_floor_connections_view,
     render_entrances_view,
+    render_rooms_view,
     render_visualize_view
 )
 from ui_processing import (
@@ -20,6 +21,8 @@ from ui_processing import (
     save_floor_connection,
     process_entrances_plot,
     save_entrances,
+    process_rooms_plot,
+    save_rooms,
     process_visualize
 )
 
@@ -72,9 +75,16 @@ if 'ent_last_paths' not in st.session_state:
     st.session_state.ent_last_paths = (None, None)
 if 'ent_points_dict' not in st.session_state:
     st.session_state.ent_points_dict = None
+if 'rooms_pending' not in st.session_state:
+    st.session_state.rooms_pending = []
+if 'rooms_plot_shown' not in st.session_state:
+    st.session_state.rooms_plot_shown = False
+if 'rooms_last_path' not in st.session_state:
+    st.session_state.rooms_last_path = None
+if 'rooms_points_dict' not in st.session_state:
+    st.session_state.rooms_points_dict = None
 
 st.title("Floor Plan Vectorizer")
-
 # Render timeline at top
 render_timeline()
 
@@ -219,6 +229,54 @@ elif st.session_state.current_view == 'entrances':
             if save_entrances(floor_number, st.session_state.ent_pending, points_dict):
                 st.info("✨ Ready to add more entrances or navigate to another step")
                 st.session_state.ent_pending = []
+        else:
+            st.error("Please enter a floor number and plot the map first")
+
+# Rooms View
+elif st.session_state.current_view == 'rooms':
+    walls_json_path, plot_button, point1_id, point2_id, point3_id, point4_id, room_full_name, add_room_button, save_button = render_rooms_view()
+    
+    # Check if plot button was clicked or if we should persist the previous plot
+    if plot_button:
+        st.session_state.rooms_plot_shown = True
+        st.session_state.rooms_last_path = walls_json_path
+    
+    # Show plot if it was previously shown and path is still valid
+    if st.session_state.rooms_plot_shown:
+        last_walls = st.session_state.rooms_last_path
+        if last_walls and os.path.exists(last_walls):
+            walls_data, points_dict = process_rooms_plot(last_walls)
+            if walls_data and points_dict:
+                st.session_state.rooms_points_dict = points_dict
+        else:
+            st.session_state.rooms_plot_shown = False
+    
+    # Handle add room button
+    if add_room_button:
+        if point1_id and point2_id and point3_id and point4_id and room_full_name:
+            try:
+                new_room = {
+                    'point1_id': int(point1_id),
+                    'point2_id': int(point2_id),
+                    'point3_id': int(point3_id),
+                    'point4_id': int(point4_id),
+                    'name': room_full_name
+                }
+                st.session_state.rooms_pending.append(new_room)
+                st.rerun()
+            except ValueError:
+                st.error("Point IDs must be integers")
+        else:
+            st.error("Please fill all fields: 4 point IDs and room name")
+    
+    # Handle save button - save all pending rooms
+    if save_button and st.session_state.rooms_pending:
+        floor_number = st.session_state.get("current_floor")
+        points_dict = st.session_state.rooms_points_dict
+        if floor_number and points_dict:
+            if save_rooms(floor_number, st.session_state.rooms_pending, points_dict):
+                st.info("✨ Ready to add more rooms or navigate to another step")
+                st.session_state.rooms_pending = []
         else:
             st.error("Please enter a floor number and plot the map first")
 
